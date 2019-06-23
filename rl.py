@@ -31,17 +31,16 @@ class NLinearModels(object):
         self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
         self._q_s_a = tf.placeholder(shape=[None, self._num_actions], dtype=tf.float32)
         # create a couple of fully connected hidden layers
-        fc1 = tf.layers.dense(self._states, 150, activation=tf.nn.relu)
-        fc2 = tf.layers.dense(fc1, 150, activation=tf.nn.relu)
-        #fc3 = tf.layers.dense(fc1, 100, activation=tf.nn.relu)
+        fc1 = tf.layers.dense(self._states, 200, activation=tf.nn.relu)
+        fc2 = tf.layers.dense(fc1, 100, activation=tf.nn.relu)
         fc3 = tf.layers.dropout(
-    fc2,
-    rate = 0.9,
-    noise_shape = None,
-    seed = None,
-    training = False,
-    name = None
-)
+        fc2,
+        rate = 0.9,
+        noise_shape = None,
+        seed = None,
+        training = False,
+        name = None
+        )
         self._logits = tf.layers.dense(fc3, self._num_actions)
         loss = tf.losses.mean_squared_error(self._q_s_a, self._logits)
         self._optimizer = tf.train.AdamOptimizer().minimize(loss)
@@ -85,7 +84,7 @@ class ExperienceReplay(object):
     In training, batches of randomly drawn experiences are used to generate the input and target for training.
     """
 
-    def __init__(self, sess, model, max_memory = 500, discount = .9, max_eps = 1,min_eps = 0):
+    def __init__(self, sess, model, max_memory = 500, discount = .8, max_eps = 1,min_eps = 0):
         """
         Setup
         max_memory: the maximum number of experiences we want to store
@@ -134,7 +133,7 @@ class ExperienceReplay(object):
         batch = self.memory.sample(self.model._batch_size)
         # batch: 32 * 2 * 4 * env_dim
         states = np.array([val[0][0] for val in batch])
-        next_states = np.array([(np.zeros((1,29,41,1))
+        next_states = np.array([(np.zeros((1,29,41,2))
                              if val[1] == True else val[0][3]) for val in batch])
     
         # ---------------------------------------------------------#
@@ -165,6 +164,6 @@ class ExperienceReplay(object):
 
 
     def load(self):
-        self.memory = pickle.load(open("save_zbi/memory.pkl","rb"))
+        self.memory = pickle.load(open("save_rl2/memory.pkl","rb"))
     def save(self):
-        pickle.dump(self.memory,open("save_zbi/memory.pkl","wb"))
+        pickle.dump(self.memory,open("save_rl2/memory.pkl","wb"))

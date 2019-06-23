@@ -79,6 +79,8 @@ def trier_cheese(pieces, reference) :
     return pieces_to_return
     
 def gen_maze(piecesOfCheese, playerLocation) :
+#    print('cheese :', piecesOfCheese)
+#    print('playerLoc : ', playerLocation)
     maze = {}    
     spots = [playerLocation] + piecesOfCheese[:]
     for spot in spots :
@@ -90,6 +92,7 @@ def gen_maze(piecesOfCheese, playerLocation) :
         
         # creating bounds
         for piece in pieces_of_cheese :
+#            print(reference, ' | ', piece)
             maze[reference][piece] = 3 / distance(reference, piece)
             if reference != playerLocation :
                 maze[piece][reference] = 3 / distance(reference, piece)
@@ -172,6 +175,7 @@ def monte_carlo(mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesO
     t = 0
     s = 0
     opponent_final_score = 21
+    win_path = []
     while t != 1000 :
         scores = gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesOfCheese)
         if scores[0] >= 20:
@@ -185,13 +189,14 @@ def monte_carlo(mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesO
                 if scores[1] < opponent_final_score :
                     opponent_final_score = scores[1]
                     win_path = scenario_path
+#                    print("win")
                 if opponent_final_score < 18 :
                     return win_path
                     break
 
                         
         t += 1
-        if t==1000 and s < 1 :
+        if t==1000 and s < 2 :
             t = 0
             s+=1
     return win_path

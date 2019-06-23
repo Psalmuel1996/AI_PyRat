@@ -19,6 +19,7 @@ import random
 import pickle
 from tqdm import tqdm
 from AIs import manh, numpy_rl_reload
+from monte_carlo_deep import monte_carlo, distance
 import matplotlib.pyplot as plt
 
 ### The game.py file describes the simulation environment, including the generation of reward and the observation that is fed to the agent
@@ -37,12 +38,12 @@ import rl
 ### - a batch is a set of experiences we use for training during one epoch
 
 
-epoch = 1000 ### Total number of epochs that will be done
+epoch = 500 ### Total number of epochs that will be done
 global winrate_pereps,drawrate_pereps
 winrate_pereps = []
 drawrate_pereps = []
 max_memory = 1000 # Maximum number of experiences we are storing
-number_of_batches = 8 # Number of batches per epoch
+number_of_batches = 12 # Number of batches per epoch
 batch_size = 32 # Number of experiences we use for training per batch
 width = 21 # Size of the playing field
 height = 15 # Size of playing field
@@ -55,7 +56,7 @@ save = 1
 
 env = game.PyRat()
 
-model = rl.NLinearModels(1189, 4, batch_size)
+model = rl.NLinearModels(2 * 1189, 4, batch_size)
 
 
 def play(sess, model, epochs, train = True):
@@ -70,36 +71,83 @@ def play(sess, model, epochs, train = True):
     last_W = 0
     last_D = 0
     last_L = 0
-
+    
     for e in tqdm(range(epochs)):
         env.reset()
+        while (0,0) in env.piecesOfCheese or (20,14) in env.piecesOfCheese :
+            env.reset()
+        env.player = (0,0)
+        env.enemy = (20,14)
+#        print("player", env.player, "opponent", env.enemy)
         game_over = False
         input_t = env.observe()
         
         if not train:
             exp_replay.decay = 1
-        while not game_over:
-            input_tm1 = input_t          
-#            plt.imshow(input_tm1[0].reshape(29,41))
-#            plt.show()
-            if random.random() < exp_replay.eps :
-                action = random.randint(0, model._num_actions - 1)
-            else:           
-                #print(input_tm1.shape)
-                q = model.predict_one(sess, input_tm1)
-                action = np.argmax(q[0])
-                #print(q[0])
-            exp_replay.eps = exp_replay.min_eps + (exp_replay.max_eps - exp_replay.min_eps) \
-                                  * np.exp(-exp_replay.decay * e)
-
+        opponentLocation = (env.player[0] + env.width - 1, env.player[1] + env.height - 1)
+#        print("opponent :", opponentLocation)
+#        print("number cheese :", len(env.piecesOfCheese))
+        mc_path = monte_carlo(env.width, env.height, env.player, opponentLocation , env.piecesOfCheese)
+        if mc_path == [] :
+            continue
+        mc_path.pop(0)
+        mc_path = [ (target[0], target[1]) for target in mc_path]
+#        print(mc_path, ' | ', env.player)
+        while mc_path != [] :
+            input_tm1 = input_t
+            current_target = mc_path[0]
+            if distance(current_target, env.player) == 1 : 
+#                print("a")
+                mc_path.pop(0)
+#            print("1:",current_target, '|', env.player)
+            if current_target[0] > env.player[0] :
+#                print("e")
+                move = 1
+#                env.player = (env.player[0] + 1, env.player[1])
+            elif current_target[0] < env.player[0] :
+#                print("f")
+                move = 0
+#                env.player = (env.player[0] - 1, env.player[1])
+            elif current_target[1] > env.player[1]:
+#                print('b')
+                move = 2
+#                env.player = (env.player[0], env.player[1] + 1)
+            else : 
+#                print("d")
+                move = 3
+#                env.player = (env.player[0], env.player[1] - 1)
+#            print("3:", current_target, ' | ', env.player)
+#            print(env.player)
+           
+                
+                
+    #            plt.imshow(input_tm1[0].reshape(29,41))
+    #            plt.show()
+                            
+    
+    #            if random.random() < exp_replay.eps :
+    #                action = random.randint(0, model._num_actions - 1)
+    #            else:           
+    #                #print(input_tm1.shape)
+    #                q = model.predict_one(sess, input_tm1)
+    #                action = np.argmax(q[0])
+    #                #print(q[0])
+    #            exp_replay.eps = exp_replay.min_eps + (exp_replay.max_eps - exp_replay.min_eps) \
+    #                                  * np.exp(-exp_replay.decay * e)
+            action = move
+#            print("3.2:", current_target, ' | ', env.player)
 
             # apply action, get rewards and new state
+#            print(action)
             input_t, reward, game_over = env.act(action)
-            
+#            print("3.4:", current_target, ' | ', env.player)
             exp_replay.remember([input_tm1, action, reward, input_t], game_over)
-            
+#            print("4:", current_target, ' | ', env.player)
+        
+                
         steps += env.round # Statistics
         exp_replay.remember([input_tm1, action, reward, input_t], game_over)
+#        print(env.score)
         if env.score > env.enemy_score: # Statistics
             win_cnt += 1 # Statistics
         elif env.score == env.enemy_score: # Statistics
@@ -120,7 +168,7 @@ def play(sess, model, epochs, train = True):
             loss += local_loss
 
 
-        if (e+1) % 100 == 0: # Statistics every 100 epochs
+        if (e+1) % 50 == 0: # Statistics every 100 epochs
             cheese_np = np.array(cheeses)
             string = "Epoch {:03d}/{:03d} | Loss {:.4f} | Cheese count {} | Last 100 Cheese {}| W/D/L {}/{}/{} | 100 W/D/L {}/{}/{} | 100 Steps {}".format(
                         e,epochs, loss, cheese_np.sum(), 
@@ -160,5 +208,5 @@ with tf.Session() as sess:
        print("done")
     print("Training done")
     print("Testing")
-    play(sess,model,200,False)
+    play(sess, model, 300, False)
     print("Testing done")

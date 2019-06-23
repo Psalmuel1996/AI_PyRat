@@ -29,11 +29,11 @@ def input_of_parameters(player, maze, opponent, mazeHeight, mazeWidth, piecesOfC
     im_size = (2 * mazeHeight - 1, 2 * mazeWidth - 1, 2)
     canvas = np.zeros(im_size)
     (x,y) = player
-    #(xx,yy) = opponent
+    (xx,yy) = opponent
     center_x, center_y = mazeWidth - 1, mazeHeight - 1
     for (x_cheese, y_cheese) in piecesOfCheese:
         canvas[y_cheese + center_y - y, x_cheese + center_x - x, 0] = 1
-    #canvas[yy + center_y - y, xx + center_x - x, 1] = 1   
+    canvas[yy + center_y - y, xx + center_x - x, 1] = 1   
     canvas = np.expand_dims(canvas, axis=0)
     return canvas
 
@@ -192,4 +192,5 @@ def turn(mazeMap, mazeWidth, mazeHeight, playerLocation, opponentLocation, playe
             q = model.predict_one(sess,input_tm1)
             action = np.argmax(q[0])
             score = playerScore
+            print(q[0], 'action :' , [MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN][action])
             return [MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN][action]   

@@ -66,7 +66,7 @@ class PyRat(object):
         Input: action and states
         Ouput: new states and reward
         """
-
+        
         MOVE_DOWN = 'D'
         MOVE_LEFT = 'L'
         MOVE_RIGHT = 'R'
@@ -99,7 +99,8 @@ class PyRat(object):
 #            raise Exception("INVALID MOVEMENT ENEMY")
 
         self.enemy = (xx + enemy_action_x, yy + enemy_action_y)
-
+#        print("action", action)
+#        print("Type action", type(action))
         self.round += 1
         action_x = 0
         action_y = 0
@@ -115,10 +116,10 @@ class PyRat(object):
         new_x = x + action_x 
         new_y = y + action_y 
         self.illegal_move = False
-        if new_x < 0 or new_x > self.width-1 or new_y < 0 or new_y > self.height-1:
-            new_x = x
-            new_y = y
-            self.illegal_move = True
+#        if new_x < 0 or new_x > self.width-1 or new_y < 0 or new_y > self.height-1:
+#            new_x = x
+#            new_y = y
+#            self.illegal_move = True
         self.player = (new_x, new_y)       
         self._draw_state()       
         
@@ -182,7 +183,9 @@ class PyRat(object):
 
     def act(self, action):
         enemy_action = self.opponent.turn(None,self.width,self.height,self.enemy,self.player,self.enemy_score,self.score,self.piecesOfCheese,3000)
+#        print("state 1 : ", self.player)
         self._update_state(action, enemy_action)
+#        print("state 2 : ", self.player)
         reward = self._get_reward()
         game_over = self._is_over()
         return self.observe(), reward, game_over
