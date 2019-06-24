@@ -20,7 +20,7 @@ import pickle
 from math import inf
 
 """ Global variables """
-global model, exp_replay, input_tm1, action, score
+global model, exp_replay, input_tm1, action, score, last_positions
 
 
 """ Functions """
@@ -75,6 +75,8 @@ def distance(la, lb):
     bx,by = lb
     return abs(bx - ax) + abs(by - ay)
 
+def action_to_movement(action) :
+    return [MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN][action]
 # This function is used to update the location after a turn depending on the chosen target
 def updatePlayerLocation(target, playerLocation) :
     if playerLocation[1] != target[1]:
@@ -150,12 +152,13 @@ def preprocessing(mazeMap, mazeWidth, mazeHeight, playerLocation, opponentLocati
      - piecesOfCheese : list(pair(int, int))
      - timeAllowed : float
     """
-    global model, exp_replay, input_tm1, action, score
+    global model, exp_replay, input_tm1, action, score, last_positions
     input_tm1 = input_of_parameters(playerLocation, mazeMap, opponentLocation, mazeHeight, mazeWidth, piecesOfCheese)    
     action = -1
     score = 0
     model = rl.NLinearModels(2*1189,4,32)
-
+    last_positions = [(0,0)] 
+    
 
 # This function is called at each turn and it is expected to return a move
 current_target =(-1,-1)
@@ -171,7 +174,7 @@ def turn(mazeMap, mazeWidth, mazeHeight, playerLocation, opponentLocation, playe
      - piecesOfCheese : list(pair(int, int))
      - timeAllowed : float
     """
-    global model,input_tm1, action, score, current_target
+    global model,input_tm1, action, score, current_target, last_positions
     if len(piecesOfCheese) <= 0:   
         if current_target not in piecesOfCheese:
             current_target, score = best_target(playerLocation, opponentLocation, playerScore, opponentScore, piecesOfCheese)
@@ -189,8 +192,21 @@ def turn(mazeMap, mazeWidth, mazeHeight, playerLocation, opponentLocation, playe
             saver.restore(sess, "save_zbi/model1.ckpt")
             input_t = input_of_parameters(playerLocation, mazeMap, opponentLocation, mazeHeight, mazeWidth, piecesOfCheese)    
             input_tm1 = input_t
-            q = model.predict_one(sess,input_tm1)
-            action = np.argmax(q[0])
+            q = model.predict_one(sess,input_tm1)[0]
+            action = np.argmax(q)
+            q[action] = -1000
+            new_spot = move(playerLocation, action_to_movement(action))
+            while new_spot[0] in [-1,mazeWidth] or new_spot[1] in [-1,mazeHeight] :
+                action = np.argmax(q)
+                q[action] = -1000
+                new_spot = move(playerLocation, action_to_movement(action))
+            if len(last_positions) == 1 :
+                last_positions.append((0,0))    
+            elif new_spot == last_positions[0] :
+                action = np.argmax(q)
+                new_spot = move(playerLocation, action_to_movement(action))
+#            print(playerLocation, '|', new_spot, ' | ', last_positions)
+            last_positions.pop(0)
+            last_positions.append(new_spot)
             score = playerScore
-            print(q[0], 'action :' , [MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN][action])
-            return [MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN][action]   
+            return action_to_movement(action)
