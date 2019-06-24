@@ -1,6 +1,5 @@
 # In this example, we can obtain scores in the order of: "win_python": 0.07 "win_rat": 0.93
 import random
-from time import time
 
 MOVE_DOWN = 'D'
 MOVE_LEFT = 'L'
@@ -24,9 +23,6 @@ def distance(la, lb):
     ax,ay = la
     bx,by = lb
     return abs(bx - ax) + abs(by - ay)
-
-# With this template, we are building an AI that will apply combinatorial game theory tools against a greedy opponent
-TEAM_NAME = "TWITCH"
 
 
 def updatePlayerLocation(target,playerLocation):
@@ -179,24 +175,22 @@ def monte_carlo(mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesO
     while t != 1000 :
         scores = gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesOfCheese)
         if scores[0] >= 20:
-            if not win_scenario : 
-                win_scenario = True
-                win_path = scenario_path
-                opponent_final_score = scores[1]
+#            if not win_scenario : 
+#            win_scenario = True
+            win_path = scenario_path
+            break
+#            opponent_final_score = scores[1]
 
-            else : 
-                
-                if scores[1] < opponent_final_score :
-                    opponent_final_score = scores[1]
-                    win_path = scenario_path
-#                    print("win")
-                if opponent_final_score < 18 :
-                    return win_path
-                    break
-
-                        
+#            else : 
+#                
+#                if scores[1] < opponent_final_score :
+#                    opponent_final_score = scores[1]
+#                    win_path = scenario_path
+#                if opponent_final_score < 18 :
+#                    return win_path
+#                    break           
         t += 1
-        if t==1000 and s < 2 :
+        if t == 1000 and s < 2 :
             t = 0
             s+=1
     return win_path

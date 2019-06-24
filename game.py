@@ -1,6 +1,7 @@
+""" Importations """
 import sys
 import numpy as np
-from AIs import manh, numpy_rl_reload
+from AIs import manh
 import random
 
 def generate_pieces_of_cheese(nb_pieces, width, height, symmetry, player1_location, player2_location, start_random):
@@ -116,10 +117,10 @@ class PyRat(object):
         new_x = x + action_x 
         new_y = y + action_y 
         self.illegal_move = False
-#        if new_x < 0 or new_x > self.width-1 or new_y < 0 or new_y > self.height-1:
-#            new_x = x
-#            new_y = y
-#            self.illegal_move = True
+        if new_x < 0 or new_x > self.width-1 or new_y < 0 or new_y > self.height-1:
+            new_x = x
+            new_y = y
+            self.illegal_move = True
         self.player = (new_x, new_y)       
         self._draw_state()       
         
@@ -129,6 +130,7 @@ class PyRat(object):
         (x,y) = self.player
         center_x, center_y = self.width-1, self.height-1
         for (x_cheese,y_cheese) in self.piecesOfCheese:
+#            print(self.player, ' | ', x_cheese, y_cheese)
             self.canvas[y_cheese + center_y - y, x_cheese + center_x - x, 0] = 1
         (x_enemy, y_enemy) = self.enemy
         self.canvas[y_enemy + center_y - y, x_enemy + center_x - x, 1] = 1
