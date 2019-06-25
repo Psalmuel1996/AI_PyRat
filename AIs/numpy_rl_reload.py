@@ -12,11 +12,8 @@ MOVE_UP = 'U'
 
 """ Imports """
 import tensorflow as tf
-import sys
 import rl
 import numpy as np
-import random as rd
-import pickle
 from math import inf
 
 """ Global variables """
@@ -75,8 +72,10 @@ def distance(la, lb):
     bx,by = lb
     return abs(bx - ax) + abs(by - ay)
 
+# This function returns the movement corresponding to the action
 def action_to_movement(action) :
     return [MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN][action]
+
 # This function is used to update the location after a turn depending on the chosen target
 def updatePlayerLocation(target, playerLocation) :
     if playerLocation[1] != target[1]:
@@ -124,20 +123,14 @@ def checkEatCheese(playerLocation, opponentLocation, playerScore, opponentScore,
             piecesOfCheese.remove(opponentLocation)
     return playerScore, opponentScore
 
-# This function simulates what will happen until we reach the target
-def simulate_game_until_target(target,playerLocation,opponentLocation,playerScore,opponentScore,piecesOfCheese):
-    
-    #While the target cheese has not yet been eaten by either player
-    #We simulate how the game will evolve until that happens    
+# This function simulates the game until the target cheese has been eaten by either player 
+def simulate_game_until_target(target,playerLocation,opponentLocation,playerScore,opponentScore,piecesOfCheese):    
     while target in piecesOfCheese:
-        #Update playerLocation (position of your player) using updatePlayerLocation
-        playerLocation = updatePlayerLocation(target,playerLocation)
-        #Every time that we move the opponent also moves. update the position of the opponent using turn_of_opponent and move
+        playerLocation = updatePlayerLocation(target, playerLocation)
         opponentLocation = move(opponentLocation, turn_of_opponent(opponentLocation, piecesOfCheese))
-        #Finally use the function checkEatCheese to see if any of the players is in the same square of a cheese.
         playerScore, opponentScore = checkEatCheese(
-            playerLocation,opponentLocation,playerScore,opponentScore,piecesOfCheese)
-    return playerLocation,opponentLocation,playerScore,opponentScore,piecesOfCheese
+            playerLocation, opponentLocation, playerScore, opponentScore, piecesOfCheese)
+    return playerLocation, opponentLocation, playerScore, opponentScore, piecesOfCheese
     
 
 
@@ -153,6 +146,7 @@ def preprocessing(mazeMap, mazeWidth, mazeHeight, playerLocation, opponentLocati
      - timeAllowed : float
     """
     global model, exp_replay, input_tm1, action, score, last_positions
+    
     input_tm1 = input_of_parameters(playerLocation, mazeMap, opponentLocation, mazeHeight, mazeWidth, piecesOfCheese)    
     action = -1
     score = 0
@@ -175,38 +169,30 @@ def turn(mazeMap, mazeWidth, mazeHeight, playerLocation, opponentLocation, playe
      - timeAllowed : float
     """
     global model,input_tm1, action, score, current_target, last_positions
-    if len(piecesOfCheese) <= 0:   
-        if current_target not in piecesOfCheese:
-            current_target, score = best_target(playerLocation, opponentLocation, playerScore, opponentScore, piecesOfCheese)
-        
-        if current_target[1] > playerLocation[1]:
-            return MOVE_UP
-        if current_target[1] < playerLocation[1]:
-            return MOVE_DOWN
-        if current_target[0] > playerLocation[0]:
-            return MOVE_RIGHT
-        return MOVE_LEFT
-    else:
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            saver.restore(sess, "save_zbi/model1.ckpt")
-            input_t = input_of_parameters(playerLocation, mazeMap, opponentLocation, mazeHeight, mazeWidth, piecesOfCheese)    
-            input_tm1 = input_t
-            q = model.predict_one(sess,input_tm1)[0]
+
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver.restore(sess, "save_rl/model.ckpt")
+        input_tm1 = input_of_parameters(playerLocation, mazeMap, opponentLocation, mazeHeight, mazeWidth, piecesOfCheese)
+        q = model.predict_one(sess, input_tm1)[0]
+        action = np.argmax(q)
+        q[action] = -1000
+        new_spot = move(playerLocation, action_to_movement(action))
+
+        # We check if the new state is illegal (a wall) and if it is the case we choose another action
+        while new_spot[0] in [-1,mazeWidth] or new_spot[1] in [-1,mazeHeight] :
             action = np.argmax(q)
             q[action] = -1000
             new_spot = move(playerLocation, action_to_movement(action))
-            while new_spot[0] in [-1,mazeWidth] or new_spot[1] in [-1,mazeHeight] :
-                action = np.argmax(q)
-                q[action] = -1000
-                new_spot = move(playerLocation, action_to_movement(action))
-            if len(last_positions) == 1 :
-                last_positions.append((0,0))    
-            elif new_spot == last_positions[0] :
-                action = np.argmax(q)
-                new_spot = move(playerLocation, action_to_movement(action))
-#            print(playerLocation, '|', new_spot, ' | ', last_positions)
-            last_positions.pop(0)
-            last_positions.append(new_spot)
-            score = playerScore
-            return action_to_movement(action)
+            
+        # We check if the new state is the same as the previous one which leaded to the current state, so that we avoid endless loops
+        if len(last_positions) == 1 :
+            last_positions.append((0,0))    
+        elif new_spot == last_positions[0] :
+            action = np.argmax(q)
+            new_spot = move(playerLocation, action_to_movement(action))
+        last_positions.pop(0)
+        last_positions.append(new_spot)
+        
+        score = playerScore
+        return action_to_movement(action)
