@@ -94,22 +94,18 @@ class PyRat(object):
                 enemy_action_x = +1
                 enemy_action_y = 0
         else:
-            #print("FUUUU")
             enemy_action_x = 0
             enemy_action_y = 0
-#            raise Exception("INVALID MOVEMENT ENEMY")
 
         self.enemy = (xx + enemy_action_x, yy + enemy_action_y)
-#        print("action", action)
-#        print("Type action", type(action))
         self.round += 1
         action_x = 0
         action_y = 0
-        if action == 0:  # left
-            action_x = -1
-        elif action == 1:  # right
+        if action == 0 :  # left
+            action_x = -1 
+        elif action == 1 :  # right
             action_x = 1
-        elif action == 2:  # up
+        elif action == 2 :  # up
             action_y = 1
         else:
             action_y = -1  # down
@@ -130,11 +126,9 @@ class PyRat(object):
         (x,y) = self.player
         center_x, center_y = self.width-1, self.height-1
         for (x_cheese,y_cheese) in self.piecesOfCheese:
-#            print(self.player, ' | ', x_cheese, y_cheese)
             self.canvas[y_cheese + center_y - y, x_cheese + center_x - x, 0] = 1
         (x_enemy, y_enemy) = self.enemy
         self.canvas[y_enemy + center_y - y, x_enemy + center_x - x, 1] = 1
-#        self.canvas[center_y,center_x,2] = 1
         return self.canvas
         
     def _get_reward(self):
@@ -155,8 +149,8 @@ class PyRat(object):
             self.piecesOfCheese.remove((x,y))
             if self.enemy_score == self.score and self.score >= self.cheeses/2:
                 return 0
-            elif self.enemy_score > self.cheeses/2:
-                return -1                
+            elif self.enemy_score > 3 * self.cheeses / 5:
+                return -0.8             
             elif self.score > self.cheeses/2:
                 return 1                
             else:
@@ -164,8 +158,8 @@ class PyRat(object):
         elif (xx,yy) in self.piecesOfCheese:
             self.piecesOfCheese.remove((xx,yy))
             self.enemy_score += 1.0                    
-            if self.enemy_score > self.cheeses/2:
-                return -1
+            if self.enemy_score > 3 * self.cheeses / 5:
+                return -0.8
             else:
                 return 0.
         else:
@@ -185,9 +179,7 @@ class PyRat(object):
 
     def act(self, action):
         enemy_action = self.opponent.turn(None,self.width,self.height,self.enemy,self.player,self.enemy_score,self.score,self.piecesOfCheese,3000)
-#        print("state 1 : ", self.player)
         self._update_state(action, enemy_action)
-#        print("state 2 : ", self.player)
         reward = self._get_reward()
         game_over = self._is_over()
         return self.observe(), reward, game_over

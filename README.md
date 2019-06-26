@@ -23,6 +23,6 @@
  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Here is the curve of the evolution of the winrate through training : 
  <p align="center"><img src="https://github.com/aminedassouli/AI_PyRat/blob/master/winrate.png"></p>
 
- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The winrate becomes about 60 % in the end of the training. However, since I was more ambitious, I tried to supervise the Q-learning by choosing the actions to learn from with Monte Carlo instead of learning from completely random actions. 
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The winrate is about 50 % in the end of the training. However, since I was more ambitious, I tried to supervise the Q-learning by choosing the actions to learn from with Monte Carlo instead of learning from completely random actions. 
 
- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Therefore, the winrate reaches 80 % !
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Therefore, the winrate reached <br>80 %  </br>!
