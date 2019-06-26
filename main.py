@@ -29,7 +29,7 @@ from monte_carlo import monte_carlo, distance
 
 
 """ Variables """
-number_epochs = 2000
+number_epochs = 5000
 number_of_batches = 12
 batch_size = 32
 max_memory = 1500
@@ -73,46 +73,47 @@ def play(sess, model, number_epochs, train = True):
         
         if not train :
             exp_replay.decay = 1
-        
-#        # We try to find an optimized path using Monte Carlo
-#        mc_path = monte_carlo(env.width, env.height, env.player, env.enemy , env.piecesOfCheese)
-#        if mc_path != [] :
-#            # If a path is found, we are going to follow it in order to choose the actions
-#            mc_path.pop(0)
-#            mc_path = [ (target[0], target[1]) for target in mc_path]
-#            while mc_path != [] :
-#                input_tm1 = input_t
-#                current_target = mc_path[0]
-#                if distance(current_target, env.player) <= 1 : 
-#                    mc_path.pop(0)
-#                if current_target[0] > env.player[0] :
-#                    action = 1
-#                elif current_target[0] < env.player[0] :
-#                    action = 0
-#                elif current_target[1] > env.player[1]:
-#                    action = 2
-#                elif current_target[1] < env.player[1]: 
-#                    action = 3
-#                
-#                # We apply the action on the state and get the reward and the new state
-#                input_t, reward, game_over = env.act(action)
-#                exp_replay.remember([input_tm1, action, reward, input_t], game_over)
-#                
-#        else :  
-        # If no path is found, we are just going to apply the classical deep reinforcement learning
-        while not game_over :
-            input_tm1 = input_t
-            if random() < exp_replay.eps :
-                action = randint(0, model._num_actions - 1)
-            else:           
-                q = model.predict_one(sess, input_tm1)
-                action = np.argmax(q[0])
-            exp_replay.eps = exp_replay.min_eps + (exp_replay.max_eps - exp_replay.min_eps) \
-                                  * np.exp(-exp_replay.decay * epoch)
-                                  
-             # We apply the action on the state and get the reward and the new state
-            input_t, reward, game_over = env.act(action)
-            exp_replay.remember([input_tm1, action, reward, input_t], game_over)
+        if epoch < 1000 :
+            # We try to find an optimized path using Monte Carlo
+            mc_path = monte_carlo(env.width, env.height, env.player, env.enemy , env.piecesOfCheese)
+        if epoch < 1000 and mc_path != [] :
+            # If a path is found, we follow it in order to choose the actions
+            mc_path.pop(0)
+            mc_path = [ (target[0], target[1]) for target in mc_path]
+            while mc_path != [] :
+                input_tm1 = input_t
+                current_target = mc_path[0]
+                if distance(current_target, env.player) <= 1 : 
+                    mc_path.pop(0)
+                if current_target[0] > env.player[0] :
+                    action = 1
+                elif current_target[0] < env.player[0] :
+                    action = 0
+                elif current_target[1] > env.player[1]:
+                    action = 2
+                elif current_target[1] < env.player[1]: 
+                    action = 3
+                
+                # We apply the action on the state and get the reward and the new state
+                input_t, reward, game_over = env.act(action)
+                exp_replay.remember([input_tm1, action, reward, input_t], game_over)
+                
+                    
+        else :  
+            # The agent is going now to be trained using random actions in order to adjust the Q-values
+            while not game_over :
+                input_tm1 = input_t
+                if random() < exp_replay.eps :
+                    action = randint(0, model._num_actions - 1)
+                else:           
+                    q = model.predict_one(sess, input_tm1)
+                    action = np.argmax(q[0])
+                exp_replay.eps = exp_replay.min_eps + (exp_replay.max_eps - exp_replay.min_eps) \
+                                      * np.exp(-exp_replay.decay * epoch)
+                                      
+                 # We apply the action on the state and get the reward and the new state
+                input_t, reward, game_over = env.act(action)
+                exp_replay.remember([input_tm1, action, reward, input_t], game_over)
                 
         # Statistics
         steps += env.round
@@ -130,7 +131,7 @@ def play(sess, model, number_epochs, train = True):
         # Training the agent
         if train :
             for _ in range(number_of_batches):                
-                inputs, targets = exp_replay.get_batch(model, batch_size=batch_size)
+                inputs, targets = exp_replay.get_batch(model, batch_size=32)
                 model.train_batch(sess, inputs.reshape((32,-1)), targets.reshape((32,-1)))
                 
         # Show statistics every 100 epochs

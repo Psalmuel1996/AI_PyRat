@@ -1,12 +1,17 @@
-# In this example, we can obtain scores in the order of: "win_python": 0.07 "win_rat": 0.93
+""" Importations """ 
 import random
 
+
+""" When the player is performing a move, it actually sends a character to the main program
+The four possibilities are defined below """
 MOVE_DOWN = 'D'
 MOVE_LEFT = 'L'
 MOVE_RIGHT = 'R'
 MOVE_UP = 'U'
 
-# Useful utility functions to obtain new location after a move
+
+""" Functions """
+# This function gives the new location after a move
 def move(location, move):
     if move == MOVE_UP:
         return (location[0], location[1] + 1)
@@ -16,15 +21,14 @@ def move(location, move):
         return (location[0] - 1, location[1])
     if move == MOVE_RIGHT:
         return (location[0] + 1, location[1])
-    
 
-# The first things we do is we program the AI of the opponent, so that we know exactly what will be its decision in a given situation
+# This function calculates the distance between two locations
 def distance(la, lb):
     ax,ay = la
     bx,by = lb
     return abs(bx - ax) + abs(by - ay)
 
-
+# This function is used to update the location after a turn depending on the chosen target
 def updatePlayerLocation(target,playerLocation):
 
     if playerLocation[0] < target[0] :
@@ -37,6 +41,7 @@ def updatePlayerLocation(target,playerLocation):
         playerLocation = move(playerLocation, MOVE_DOWN)
     return playerLocation
 
+# This function checks if a player reached a piece of cheese and updates the scores
 def checkEatCheese():
     global player_score
     global opponent_score
@@ -57,8 +62,8 @@ def checkEatCheese():
             opponent_score += 1
             remain_pieces.remove(opponent_loc)
     
-
-def trier_cheese(pieces, reference) :
+# This function returns the list of pieces of cheese sorted depending on the distance from the reference
+def sort_cheese(pieces, reference) :
     pieces_in_order = pieces[:]
     distances = [distance(cheese, reference) for cheese in pieces_in_order]
     pieces_to_return = []
@@ -73,10 +78,9 @@ def trier_cheese(pieces, reference) :
         pieces_to_return.insert(j, pieces_in_order[i])
         i += 1
     return pieces_to_return
-    
+
+# This function generates a metagraph connecting the player to the piecesOfCheese with weights
 def gen_maze(piecesOfCheese, playerLocation) :
-#    print('cheese :', piecesOfCheese)
-#    print('playerLoc : ', playerLocation)
     maze = {}    
     spots = [playerLocation] + piecesOfCheese[:]
     for spot in spots :
@@ -84,16 +88,16 @@ def gen_maze(piecesOfCheese, playerLocation) :
     
     while len(spots) > 1 :
         reference = spots.pop(0)
-        pieces_of_cheese = trier_cheese(spots,reference)
+        pieces_of_cheese = sort_cheese(spots,reference)
         
-        # creating bounds
+        # Creating weights
         for piece in pieces_of_cheese :
-#            print(reference, ' | ', piece)
             maze[reference][piece] = 3 / distance(reference, piece)
             if reference != playerLocation :
                 maze[piece][reference] = 3 / distance(reference, piece)
     return maze
 
+# This function determines the cheese target for the player
 def best_target_play(remain_pieces, player_loc, metagraph, opponent_loc):
     global player_targ
     
@@ -117,8 +121,8 @@ def best_target_play(remain_pieces, player_loc, metagraph, opponent_loc):
             j += 1
         player_targ = pieces_to_consider[j-1][0]
     
+# This function determines the cheese target for the opponent (greedy)
 def best_target_adv(piecesOfCheese, opponentLocation, mazeWidth, mazeHeight) :
-
     closest_poc = (-1,-1)
     best_distance = mazeWidth + mazeHeight
     for poc in remain_pieces:
@@ -127,9 +131,11 @@ def best_target_adv(piecesOfCheese, opponentLocation, mazeWidth, mazeHeight) :
             closest_poc = poc
     return closest_poc
 
+# This function simulates a turn of a PyRat game scenario
 def gen_turn(metagraph, mazeWidth, mazeHeight):
     global opponent_loc
     global player_loc 
+    
     opponent_target = best_target_adv(remain_pieces, opponent_loc, mazeWidth, mazeHeight)
     opponent_loc = updatePlayerLocation(opponent_target, opponent_loc)
     best_target_play(remain_pieces, player_loc, metagraph, opponent_loc)
@@ -137,7 +143,7 @@ def gen_turn(metagraph, mazeWidth, mazeHeight):
     
     checkEatCheese()
     
-    
+# This function generates one scenario (possible progress) of a PyRat game
 def gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesOfCheese):
     global player_loc
     global opponent_loc
@@ -158,7 +164,8 @@ def gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocat
         gen_turn(metagraph, mazeWidth, mazeHeight)
     scores = [player_score, opponent_score]    
     return scores
-    
+
+# This function generates multiple scenarios for a PyRat game and returns the path corresponding to the best one
 def monte_carlo(mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesOfCheese):
     global path
     global win_path
@@ -172,27 +179,12 @@ def monte_carlo(mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesO
     s = 0
     opponent_final_score = 21
     win_path = []
-    while t != 1000 :
+    while t != 1500 :
         scores = gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesOfCheese)
         if scores[0] >= 20:
-#            if not win_scenario : 
-#            win_scenario = True
             win_path = scenario_path
             break
-#            opponent_final_score = scores[1]
-
-#            else : 
-#                
-#                if scores[1] < opponent_final_score :
-#                    opponent_final_score = scores[1]
-#                    win_path = scenario_path
-#                if opponent_final_score < 18 :
-#                    return win_path
-#                    break           
         t += 1
-        if t == 1000 and s < 2 :
-            t = 0
-            s+=1
     return win_path
 
     
