@@ -29,16 +29,16 @@ from monte_carlo import monte_carlo, distance
 
 
 """ Variables """
-number_epochs = 5000
+number_epochs = 3000
 number_of_batches = 12
 batch_size = 32
-max_memory = 1500
+max_memory = 2000
 
 opponent = manh # AI used for the opponent
-width = 21 # Size of the playing field
-height = 15 # Size of playing field
+width = 15 # Size of the playing field
+height = 12 # Size of playing field
 
-model = rl.NLinearModels(2 * 1189, 4, batch_size) ## The neural network used for training the agent
+model = rl.NLinearModels(2 * 667, 4, batch_size) ## The neural network used for training the agent
 
 ## If load, then the last saved result is loaded and training is continued. Otherwise, training is performed from scratch starting with random parameters
 load = 0
@@ -73,10 +73,11 @@ def play(sess, model, number_epochs, train = True):
         
         if not train :
             exp_replay.decay = 1
-        if epoch < 1000 :
+        if epoch < 2000 :
             # We try to find an optimized path using Monte Carlo
             mc_path = monte_carlo(env.width, env.height, env.player, env.enemy , env.piecesOfCheese)
-        if epoch < 1000 and mc_path != [] :
+            
+        if epoch < 2000 and mc_path != [] :
             # If a path is found, we follow it in order to choose the actions
             mc_path.pop(0)
             mc_path = [ (target[0], target[1]) for target in mc_path]
@@ -158,7 +159,7 @@ if __name__ == '__main__':
             init = tf.initialize_all_variables()
             sess.run(init)
         else :
-            saver.restore(sess, "save_rl/model.ckpt")
+            saver.restore(sess, "save_rl2/model.ckpt")
         print("Training")
         play(sess, model, number_epochs, True)
         
@@ -168,10 +169,9 @@ if __name__ == '__main__':
         plt.savefig('winrate.png')
         plt.xlabel('epochs number')
         plt.ylabel('winrate')
-        plt.savefig('drawrate1.png')
         
         if save :
-           saver.save(sess, "save_rl/model.ckpt")
+           saver.save(sess, "save_rl2/model.ckpt")
            print("done")
         print("Training done")
         print("Testing")

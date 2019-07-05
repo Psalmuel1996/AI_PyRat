@@ -48,7 +48,7 @@ def generate_pieces_of_cheese(nb_pieces, width, height, symmetry, player1_locati
 
 class PyRat(object):
 
-    def __init__(self, width=21,height=15,round_limit=200,cheeses=40,symmetric=False,start_random=True,opponent=manh):
+    def __init__(self, width=15,height=12,round_limit=200,cheeses=20,symmetric=False,start_random=True,opponent=manh):
         self.preprocess = False
         self.symmetric = symmetric
         self.start_random = start_random
@@ -149,8 +149,8 @@ class PyRat(object):
             self.piecesOfCheese.remove((x,y))
             if self.enemy_score == self.score and self.score >= self.cheeses/2:
                 return 0
-            elif self.enemy_score > 3 * self.cheeses / 5:
-                return -0.8             
+            elif self.enemy_score > self.cheeses/2:
+                return -1             
             elif self.score > self.cheeses/2:
                 return 1                
             else:
@@ -158,8 +158,8 @@ class PyRat(object):
         elif (xx,yy) in self.piecesOfCheese:
             self.piecesOfCheese.remove((xx,yy))
             self.enemy_score += 1.0                    
-            if self.enemy_score > 3 * self.cheeses / 5:
-                return -0.8
+            if self.enemy_score > self.cheeses / 2:
+                return -1
             else:
                 return 0.
         else:

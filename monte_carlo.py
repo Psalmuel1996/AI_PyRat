@@ -153,6 +153,7 @@ def gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocat
     global player_targ
     global scenario_path
     
+    number_cheese = len(piecesOfCheese)
     scenario_path = [playerLocation]
     player_targ = playerLocation
     player_loc = playerLocation            
@@ -160,7 +161,7 @@ def gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocat
     player_score = opponent_score = 0
     remain_pieces = piecesOfCheese[:]
     scenario_path = [playerLocation]
-    while player_score < 20 and opponent_score < 20 and opponent_score - player_score < 5:
+    while player_score < number_cheese // 2 and opponent_score < number_cheese // 2 and opponent_score - player_score < 5 :
         gen_turn(metagraph, mazeWidth, mazeHeight)
     scores = [player_score, opponent_score]    
     return scores
@@ -177,11 +178,12 @@ def monte_carlo(mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesO
     win_scenario = False
     t = 0
     s = 0
-    opponent_final_score = 21
+    number_cheese = len(piecesOfCheese)
+    opponent_final_score = number_cheese // 2 + 1
     win_path = []
     while t != 1500 :
         scores = gen_scenario(metagraph, mazeWidth, mazeHeight, playerLocation, opponentLocation, piecesOfCheese)
-        if scores[0] >= 20:
+        if scores[0] >= number_cheese // 2:
             win_path = scenario_path
             break
         t += 1

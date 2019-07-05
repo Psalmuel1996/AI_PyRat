@@ -31,17 +31,11 @@ class NLinearModels(object):
         # Create a couple of fully connected hidden layers
         fc1 = tf.layers.dense(self._states, 400, activation=tf.nn.relu)
         fc2 = tf.layers.dense(fc1, 200, activation=tf.nn.relu)
-        fc3 = tf.layers.dropout(
-        fc2,
-        rate = 0.85,
-        noise_shape = None,
-        seed = None,
-        training = False,
-        name = None
-        )
+        fc3 = tf.layers.dense(fc2, 50, activation=tf.nn.sigmoid)
+
         
         self._logits = tf.layers.dense(fc3, self._num_actions)
-        loss = tf.losses.mean_squared_error(self._q_s_a, self._logits)
+        loss = tf.losses.absolute_difference(self._q_s_a, self._logits)
         self._optimizer = tf.train.AdamOptimizer().minimize(loss)
         self._var_init = tf.global_variables_initializer()
 
@@ -77,13 +71,12 @@ class Memory:
         else:
             return random.sample(self._samples, no_samples)
 
-
 class ExperienceReplay(object):
     """
     During gameplay all the experiences < s, a, r, s’ > are stored in a replay memory. 
     In training, batches of randomly drawn experiences are used to generate the input and target for training.
     """
-    def __init__(self, sess, model, max_memory = 500, discount = .8, max_eps = 1,min_eps = 0):
+    def __init__(self, sess, model, max_memory = 500, discount = .94, max_eps = 1,min_eps = 0):
         """
         max_memory: the maximum number of experiences we want to store
         memory: a list of experiences
@@ -126,7 +119,6 @@ class ExperienceReplay(object):
         next_states = np.array([(np.zeros((1,env_dim[1],env_dim[2],env_dim[3]))
                              if val[1] == True else val[0][3]) for val in batch])
     
-        
         # Predict Q(s,a) given the batch of states
         q_s_a = self.model.predict_batch(states.reshape((batch_size,-1)), self.sess)
         # Predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
